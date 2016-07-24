@@ -1,11 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/urfave/cli"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"log"
 	"os"
 )
 
@@ -17,6 +18,60 @@ type Field struct {
 type Type struct {
 	Name   string
 	Fields []Field
+}
+
+var (
+	typename = flag.String("type", "", "type name to inspect; must be set")
+	filename string
+)
+
+func showUsage() {
+
+	usage := `go-genstructs - Automatically generate Go code from Go structures
+
+USAGE:
+   go-genstructs -type TYPE FILE
+   
+VERSION:
+   0.1.0
+   
+ARGUMENTS:
+
+   FILE           file name where the structure; must be set if called
+                  from command-line; automatically set if called from
+                  'go generate'
+
+GLOBAL OPTIONS:
+   --type TYPE    type name of the structure to inspect; must be set
+   --help, -h     show help
+   --version, -v  print the version
+`
+	fmt.Println(usage)
+}
+
+func main() {
+	log.SetFlags(0)
+	log.SetPrefix("go-genstructs: ")
+	flag.Usage = showUsage
+	flag.Parse()
+
+	if *typename == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	file := ""
+	if flag.NArg() > 0 {
+		file = flag.Arg(0)
+	} else {
+		file = os.Getenv("GOFILE")
+	}
+	tdef, err := inspectType(*typename, file)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println(tdef)
 }
 
 func inspectType(typename, filename string) (Type, error) {
@@ -67,34 +122,4 @@ func inspectType(typename, filename string) (Type, error) {
 		return typeDef, fmt.Errorf("type %s has 0 fields", typename)
 	}
 	return typeDef, nil
-}
-
-func main() {
-
-	app := cli.NewApp()
-
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "type",
-			Value: "",
-			Usage: "type name to inspect; must be set",
-		},
-	}
-
-	app.Action = func(c *cli.Context) error {
-		file := ""
-		if c.NArg() > 0 {
-			file = c.Args().Get(0)
-		} else {
-			file = os.Getenv("GOFILE")
-		}
-		tdef, err := inspectType(c.String("type"), file)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(tdef)
-		return err
-	}
-
-	app.Run(os.Args)
 }
