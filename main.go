@@ -1,4 +1,4 @@
-package genstructs
+package main
 
 import (
 	"flag"
@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	typename = flag.String("type", "", "type name to inspect; must be set")
-	filename string
+	typename  = flag.String("type", "", "type name to inspect; must be set")
+	generator = flag.String("gen", "", "generator function; must be set")
+	filename  string
 )
 
 func showUsage() {
@@ -21,7 +22,7 @@ func showUsage() {
 	usage := `go-genstructs - Automatically generate Go code from Go structures
 
 USAGE:
-   go-genstructs -type TYPE FILE
+   go-genstructs -type TYPE -gen FUNC FILE
    
 VERSION:
    0.1.0
@@ -34,6 +35,7 @@ ARGUMENTS:
 
 GLOBAL OPTIONS:
    --type TYPE    type name of the structure to inspect; must be set
+   --gen GENE     generator function name; must be set
    --help, -h     show help
    --version, -v  print the version
 `
@@ -46,7 +48,7 @@ func main() {
 	flag.Usage = showUsage
 	flag.Parse()
 
-	if *typename == "" {
+	if *typename == "" || *generator == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -57,7 +59,7 @@ func main() {
 	} else {
 		file = os.Getenv("GOFILE")
 	}
-	tdef, err := inspectType(*typename, file)
+	tdef, err := inspectCode(*typename, *generator, file)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -65,7 +67,7 @@ func main() {
 	fmt.Println(tdef)
 }
 
-func inspectType(typename, filename string) (lib.Type, error) {
+func inspectCode(typename, generator, filename string) (lib.Type, error) {
 	var (
 		typeDef    lib.Type // the Type struct we'll build and return
 		inspecting bool     // are we actually inspecting the 'typename' ast?
@@ -102,6 +104,7 @@ func inspectType(typename, filename string) (lib.Type, error) {
 					})
 				}
 			default:
+				fmt.Println("other x:", x)
 			}
 			return true
 		})
