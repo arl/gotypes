@@ -1,2 +1,2 @@
-# go-genconfig
-Automatically generate the configuration structures for Surviveler Game Engine
+# go-genstructs
+Automatically generate Go code from Go structures
