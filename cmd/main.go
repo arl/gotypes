@@ -1,24 +1,15 @@
-package main
+package genstructs
 
 import (
 	"flag"
 	"fmt"
+	"github.com/aurelien-rainone/go-genstructs/lib"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"log"
 	"os"
 )
-
-type Field struct {
-	Name    string
-	Comment string
-}
-
-type Type struct {
-	Name   string
-	Fields []Field
-}
 
 var (
 	typename = flag.String("type", "", "type name to inspect; must be set")
@@ -74,10 +65,10 @@ func main() {
 	fmt.Println(tdef)
 }
 
-func inspectType(typename, filename string) (Type, error) {
+func inspectType(typename, filename string) (lib.Type, error) {
 	var (
-		typeDef    Type // the Type struct we'll build and return
-		inspecting bool // are we actually inspecting the 'typename' ast?
+		typeDef    lib.Type // the Type struct we'll build and return
+		inspecting bool     // are we actually inspecting the 'typename' ast?
 	)
 
 	fset := token.NewFileSet() // positions are relative to fset
@@ -105,7 +96,7 @@ func inspectType(typename, filename string) (Type, error) {
 			case *ast.Field:
 				if inspecting {
 					fmt.Println("len(Name):", len(x.Names))
-					typeDef.Fields = append(typeDef.Fields, Field{
+					typeDef.Fields = append(typeDef.Fields, lib.Field{
 						Name:    x.Names[0].Name,
 						Comment: x.Doc.Text(),
 					})
